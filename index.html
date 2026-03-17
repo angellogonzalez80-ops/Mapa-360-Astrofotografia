@@ -13,8 +13,18 @@
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a0c; color: white; overflow: hidden; }
         #layout { display: flex; flex-direction: column; height: 100vh; }
         #header { padding: 10px; background: #16161a; text-align: center; border-bottom: 1px solid #333; }
-        #map { flex: 1; width: 100%; background: #222; }
-        #panorama { height: 40vh; width: 100%; background: #000; border-top: 2px solid #444; }
+        #map { 
+    flex: 1; /* Aumenta este número si quieres el mapa más grande */
+    width: 100%; 
+    background: #222; 
+}
+
+#panorama { 
+    flex: 1.2; /* Aumenta este número si quieres la foto más grande */
+    width: 100%; 
+    background: #000; 
+    border-top: 2px solid #444; 
+}
         h1 { margin: 0; font-size: 1.1rem; color: #eee; text-transform: uppercase; letter-spacing: 1px; }
         .leaflet-popup-content { color: #000; text-align: center; line-height: 1.4; }
         .btn-ver { background: #2c3e50; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top: 8px; font-weight: bold; }
