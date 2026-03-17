@@ -1,35 +1,123 @@
-// --- TUS PUNTOS DE ASTROFOTOGRAFÍA ---
-// Al estar en el mismo repo, solo ponemos el nombre del archivo
-var puntos = [
-    {
-        lat: -32.712, // Coordenadas aproximadas de Los Andes / Campos Ahumada
-        lng: -70.548, 
-        nombre: "Curva Campos Ahumada",
-        bortle: "3",
-        altitud: "1312m",
-        foto360: "360 yerko 2 Panorama.jpg" // NOMBRE EXACTO DEL ARCHIVO QUE SUBISTE
-    },
-    {
-        lat: -32.729, 
-        lng: -70.551, 
-        nombre: "Yerko Panorama",
-        bortle: "4",
-        altitud: "1196m",
-        foto360: "360 curva campos ahumada 2.jpg" // NOMBRE EXACTO DEL ARCHIVO QUE SUBISTE
-    }
-];
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astro-Mapa 360 | Angello González</title>
 
-// --- FUNCIÓN DEL VISOR 360 MODIFICADA ---
-var viewer; 
-function cargar360(archivo) {
-    if (viewer) { viewer.destroy(); }
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
     
-    // GitHub Pages sirve los archivos en la misma carpeta raíz
-    viewer = pannellum.viewer('panorama', {
-        "type": "equirectangular",
-        "panorama": archivo, 
-        "autoLoad": true,
-        "compass": true,
-        "northOffset": 0 // Puedes ajustar esto para orientar el norte real
+    <style>
+        /* Estilos visuales */
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a0c; color: white; overflow: hidden; }
+        
+        #layout { display: flex; flex-direction: column; height: 100vh; }
+        
+        #header { padding: 15px; background: #16161a; border-bottom: 1px solid #333; text-align: center; }
+        h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; color: #e0e0e0; }
+        p { margin: 5px 0 0; font-size: 0.85rem; color: #888; }
+
+        #map { flex: 1; width: 100%; }
+        
+        #panorama { height: 45vh; width: 100%; background: #000; border-top: 2px solid #333; position: relative; }
+        
+        /* Ajuste para los popups del mapa */
+        .leaflet-popup-content-wrapper { background: #16161a; color: white; border: 1px solid #444; }
+        .leaflet-popup-tip { background: #16161a; }
+        .btn-ver { background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 10px; width: 100%; font-weight: bold; }
+        .btn-ver:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+
+<div id="layout">
+    <div id="header">
+        <h1>PROYECTO ASTROFOTOGRAFÍA 360</h1>
+        <p>Explora cielos oscuros a través de panorámicas de alta resolución</p>
+    </div>
+
+    <div id="map"></div>
+    <div id="panorama"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+
+<script>
+    // 1. Configuración inicial del Mapa (Centrado en zona central de Chile)
+    var map = L.map('map').setView([-32.833, -70.598], 7);
+
+    // Capa base: Satélite (Esri)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{y}/{x}/{z}', {
+        attribution: 'Tiles &copy; Esri'
+    }).addTo(map);
+
+    // Capa de Contaminación Lumínica (Bortle Overlay)
+    L.tileLayer('https://map1.lightpollutionmap.info/tiles/2022/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        opacity: 0.5,
+        attribution: 'Light Pollution Map'
+    }).addTo(map);
+
+    // 2. Base de datos de tus fotos (Asegúrate de que el nombre coincida con el archivo en GitHub)
+    var puntos = [
+        {
+            lat: -32.729, 
+            lng: -70.551, 
+            nombre: "Curva Campos Ahumada",
+            bortle: "4",
+            altitud: "1196m",
+            archivo: "360 curva campos ahumada 2.jpg" // CAMBIA AL NOMBRE REAL DE TU ARCHIVO
+        },
+        {
+            lat: -32.712, 
+            lng: -70.548, 
+            nombre: "Torreon Astronomico",
+            bortle: "3",
+            altitud: "1312m",
+            archivo: "360 yerko 2 Panorama.jpg" // CAMBIA AL NOMBRE REAL DE TU ARCHIVO
+        }
+    ];
+
+    // 3. Crear marcadores dinámicamente
+    puntos.forEach(function(p) {
+        var marker = L.marker([p.lat, p.lng]).addTo(map);
+        
+        var content = `
+            <div style="text-align:center;">
+                <strong style="font-size:1.1rem;">${p.nombre}</strong><br>
+                <span style="color:#aaa;">Bortle: ${p.bortle} | Alt: ${p.altitud}</span><br>
+                <button class="btn-ver" onclick="cargar360('${p.archivo}')">ABRIR 360°</button>
+            </div>
+        `;
+        marker.bindPopup(content);
     });
-}
+
+    // 4. Función para cargar el visor Pannellum
+    var viewer = null;
+    function cargar360(nombreArchivo) {
+        if (viewer) { viewer.destroy(); }
+        
+        viewer = pannellum.viewer('panorama', {
+            "type": "equirectangular",
+            "panorama": nombreArchivo, 
+            "autoLoad": true,
+            "compass": true,
+            "title": "Astrofotografía 360",
+            "author": "Angello González",
+            "hfov": 100
+        });
+        
+        // Desplazar la página suavemente hacia el visor en móviles
+        document.getElementById('panorama').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Cargar la primera imagen por defecto al abrir la web (opcional)
+    window.onload = function() {
+        cargar360(puntos[0].archivo);
+    };
+</script>
+
+</body>
+</html>
