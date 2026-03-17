@@ -3,211 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Astro-Mapa 360 | Angello González</title>
+    <title>Mapa Astrofotografía 360 | Angello González</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     
     <style>
-        /* Estilos visuales */
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a0c; color: white; overflow: hidden; }
-        
+        body { margin: 0; padding: 0; font-family: sans-serif; background: #0a0a0c; color: white; overflow: hidden; }
         #layout { display: flex; flex-direction: column; height: 100vh; }
-        
-        #header { padding: 15px; background: #16161a; border-bottom: 1px solid #333; text-align: center; }
-        h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; color: #e0e0e0; }
-        p { margin: 5px 0 0; font-size: 0.85rem; color: #888; }
-
-        #map { flex: 1; width: 100%; }
-        
-        #panorama { height: 45vh; width: 100%; background: #000; border-top: 2px solid #333; position: relative; }
-        
-        /* Ajuste para los popups del mapa */
-        .leaflet-popup-content-wrapper { background: #16161a; color: white; border: 1px solid #444; }
-        .leaflet-popup-tip { background: #16161a; }
-        .btn-ver { background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 10px; width: 100%; font-weight: bold; }
-        .btn-ver:hover { background: #2980b9; }
+        #header { padding: 10px; background: #16161a; text-align: center; border-bottom: 1px solid #333; }
+        #map { flex: 1; width: 100%; background: #222; }
+        #panorama { height: 40vh; width: 100%; background: #000; border-top: 2px solid #444; }
+        h1 { margin: 0; font-size: 1.1rem; color: #eee; }
+        /* Estilo para que el popup se lea bien */
+        .leaflet-popup-content { color: #000; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="layout">
     <div id="header">
-        <h1>MIRADOR VIRTUAL ASTROFOTOGRAFÍA 360</h1>
-        <p>Explora cielos oscuros a través de panorámicas nocturnas.</p>
+        <h1>MAPA DE CIELOS OSCUROS 360°</h1>
     </div>
-
     <div id="map"></div>
     <div id="panorama"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 <script>
-// 1. Inicializar el mapa
-var map = L.map('map').setView([-32.833, -70.598], 10);
+    // Configuración Inicial
+    var map = L.map('map').setView([-32.833, -70.598], 10);
 
-// --- DEFINICIÓN DE CAPAS ---
+    // CAPAS BASE
+    var googleSatelite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: 'Google Maps'
+    }).addTo(map);
 
-// Capa de Satélite (Google Hybrid)
-var satelite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-    attribution: 'Google Maps'
-});
-
-// Capa de Mapa de Calles (OpenStreetMap)
-var calles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
-});
-
-// Capa de Contaminación Lumínica (Bortle)
-var contaminacion = L.tileLayer('https://map1.lightpollutionmap.info/tiles/2022/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    opacity: 0.5,
-    attribution: 'Light Pollution Map'
-});
-
-// Activar capas por defecto
-satelite.addTo(map);
-contaminacion.addTo(map);
-
-// --- CONTROL DE CAPAS (El botón para cambiar) ---
-var capasBase = {
-    "Satélite": satelite,
-    "Mapa de Calles": calles
-};
-
-var capasSuperpuestas = {
-    "Contaminación Lumínica": contaminacion
-};
-
-L.control.layers(capasBase, capasSuperpuestas).addTo(map);
-
-// --- BUSCADOR DE GOOGLE MAPS (Geocodificador) ---
-L.Control.geocoder({
-    defaultMarkGeocode: false,
-    placeholder: "Buscar lugar o coordenadas...",
-    errorMessage: "No se encontró el lugar."
-})
-.on('markgeocode', function(e) {
-    var bbox = e.geocode.bbox;
-    var poly = L.polygon([
-        bbox.getSouthEast(),
-        bbox.getNorthEast(),
-        bbox.getNorthWest(),
-        bbox.getSouthWest()
-    ]);
-    map.fitBounds(poly.getBounds());
-})
-.addTo(map);
-
-// --- TUS PUNTOS DE ASTROFOTOGRAFÍA ---
-var puntos = [
-    {
-        lat: -32.833, 
-        lng: -70.598, 
-        nombre: "Curva Campos Ahumada",
-        bortle: "3",
-        altitud: "1200m",
-        archivo: "360-curva-campos-ahumada-2.jpg" 
-    },
-    {
-        lat: -32.850, 
-        lng: -70.610, 
-        nombre: "Yerko Panorama",
-        bortle: "3",
-        altitud: "1150m",
-        archivo: "360-yerko-2-panorama.jpg"
-    }
-];
-
-puntos.forEach(function(p) {
-    var marker = L.marker([p.lat, p.lng]).addTo(map);
-    var content = `
-        <div style="text-align:center; color:black;">
-            <strong>${p.nombre}</strong><br>
-            Bortle: ${p.bortle} | Alt: ${p.altitud}<br>
-            <button onclick="cargar360('${p.archivo}')" style="margin-top:10px; cursor:pointer; padding:5px 10px;">ABRIR 360°</button>
-        </div>
-    `;
-    marker.bindPopup(content);
-});
-
-// --- VISOR 360 ---
-var viewer = null;
-function cargar360(nombreArchivo) {
-    if (viewer) { viewer.destroy(); }
-    viewer = pannellum.viewer('panorama', {
-        "type": "equirectangular",
-        "panorama": nombreArchivo, 
-        "autoLoad": true,
-        "compass": true,
-        "title": "Astrofotografía 360",
-        "author": "Angello González"
+    var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OSM'
     });
-}
 
-// Carga inicial
-window.onload = function() {
-    cargar360(puntos[0].archivo);
-};
+    // CAPA SUPERPUESTA (Contaminación Lumínica)
+    var lightPollution = L.tileLayer('https://map1.lightpollutionmap.info/tiles/2022/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        opacity: 0.5,
+        attribution: 'Light Pollution Map'
+    }).addTo(map);
 
-    // 2. Base de datos de tus fotos (Asegúrate de que el nombre coincida con el archivo en GitHub)
+    // CONTROL DE CAPAS (Botón arriba a la derecha)
+    var baseMaps = {
+        "Satélite (Google)": googleSatelite,
+        "Mapa Calles (OSM)": openStreetMap
+    };
+    var overlayMaps = {
+        "Contaminación Lumínica": lightPollution
+    };
+    L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+    // BUSCADOR (Aparecerá una lupa arriba a la derecha o izquierda)
+    L.Control.geocoder({
+        defaultMarkGeocode: true,
+        placeholder: "Buscar lugar...",
+    }).addTo(map);
+
+    // PUNTOS DE TUS FOTOS
     var puntos = [
         {
-            lat: -32.729, 
-            lng: -70.551, 
-            nombre: "Curva Campos Ahumada",
-            bortle: "4",
-            altitud: "1196m",
-            archivo: "360 curva campos ahumada 2.jpg" // CAMBIA AL NOMBRE REAL DE TU ARCHIVO
+            lat: -32.712, // Coordenadas aproximadas de Los Andes / Campos Ahumada
+        lng: -70.548, 
+        nombre: "Curva Campos Ahumada",
+        bortle: "3",
+        altitud: "1312m",
+        foto360: "360 yerko 2 Panorama.jpg" 
         },
         {
-            lat: -32.712, 
-            lng: -70.548, 
-            nombre: "Torreon Astronomico",
-            bortle: "3",
-            altitud: "1312m",
-            archivo: "360 yerko 2 Panorama.jpg" // CAMBIA AL NOMBRE REAL DE TU ARCHIVO
+            lat: -32.729, 
+        lng: -70.551, 
+        nombre: "Yerko Panorama",
+        bortle: "4",
+        altitud: "1196m",
+        foto360: "360 curva campos ahumada 2.jpg"
         }
     ];
 
-    // 3. Crear marcadores dinámicamente
     puntos.forEach(function(p) {
         var marker = L.marker([p.lat, p.lng]).addTo(map);
-        
-        var content = `
-            <div style="text-align:center;">
-                <strong style="font-size:1.1rem;">${p.nombre}</strong><br>
-                <span style="color:#aaa;">Bortle: ${p.bortle} | Alt: ${p.altitud}</span><br>
-                <button class="btn-ver" onclick="cargar360('${p.archivo}')">ABRIR 360°</button>
-            </div>
-        `;
-        marker.bindPopup(content);
+        marker.bindPopup(`
+            <strong>${p.nombre}</strong><br>
+            Bortle: ${p.bortle}<br>
+            <button onclick="cargar360('${p.archivo}')" style="margin-top:8px; cursor:pointer;">VER 360°</button>
+        `);
     });
 
-    // 4. Función para cargar el visor Pannellum
+    // VISOR 360
     var viewer = null;
-    function cargar360(nombreArchivo) {
+    function cargar360(img) {
         if (viewer) { viewer.destroy(); }
-        
         viewer = pannellum.viewer('panorama', {
             "type": "equirectangular",
-            "panorama": nombreArchivo, 
+            "panorama": img, 
             "autoLoad": true,
-            "compass": true,
-            "title": "Astrofotografía 360",
-            "author": "Angello González",
-            "hfov": 100
+            "compass": true
         });
-        
-        // Desplazar la página suavemente hacia el visor en móviles
-        document.getElementById('panorama').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // Cargar la primera imagen por defecto al abrir la web (opcional)
+    // Cargar la primera al inicio
     window.onload = function() {
-        cargar360(puntos[0].archivo);
+        if(puntos.length > 0) cargar360(puntos[0].archivo);
     };
 </script>
 
