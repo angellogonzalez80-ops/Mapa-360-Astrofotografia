@@ -10,14 +10,14 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background: #0a0a0c; color: white; overflow: hidden; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a0c; color: white; overflow: hidden; }
         #layout { display: flex; flex-direction: column; height: 100vh; }
         #header { padding: 10px; background: #16161a; text-align: center; border-bottom: 1px solid #333; }
         #map { flex: 1; width: 100%; background: #222; }
         #panorama { height: 40vh; width: 100%; background: #000; border-top: 2px solid #444; }
         h1 { margin: 0; font-size: 1.1rem; color: #eee; text-transform: uppercase; letter-spacing: 1px; }
         .leaflet-popup-content { color: #000; text-align: center; line-height: 1.4; }
-        .btn-ver { background: #2c3e50; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-top: 8px; }
+        .btn-ver { background: #2c3e50; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -35,83 +35,47 @@
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 <script>
-  // --- DEFINICIÓN DE MAPAS BASE ---
+    // 1. Inicializar mapa centrado en tus coordenadas
+    var map = L.map('map').setView([-32.720, -70.550], 11);
 
-var googleSatelite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-    attribution: 'Google Maps'
-});
+    // --- CAPAS BASE ---
+    var googleSatelite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: 'Google Maps'
+    }).addTo(map);
 
-var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OSM'
-});
-
-// NUEVA CAPA: Datos de la NASA (VIIRS Night Lights)
-// Esta capa es infalible y carga mucho más rápido
-var mapaContaminacion = L.tileLayer('https://map1.lightpollutionmap.info/tiles/2022/{z}/{x}/{y}.png', {
-    maxZoom: 10,
-    attribution: 'Light Pollution Map',
-    crossOrigin: true // Esto ayuda a evitar bloqueos de seguridad
-});
-
-// Capa de respaldo de la NASA si la anterior falla
-var nasaNight = L.tileLayer('https://map1.vis.earthdata.nasa.gov/wmts-webmerc/VIIRS_CityLights_2012/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg', {
-    attribution: 'NASA EOSDIS',
-    maxZoom: 8
-});
-
-// Activar satélite por defecto
-googleSatelite.addTo(map);
-
-// --- CONTROL DE CAPAS ---
-var baseMaps = {
-    "Vista Satélite": googleSatelite,
-    "Vista Calles": openStreetMap,
-    "Capa Bortle (Opción 1)": mapaContaminacion,
-    "Luces NASA (Opción 2)": nasaNight
-};
-
-L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
-
-
-
-puntos.forEach(function(p) {
-    var marker = L.marker([p.lat, p.lng]).addTo(map);
-    marker.bindPopup(`
-        <div style="font-family: sans-serif; color: #000;">
-            <strong>${p.nombre}</strong><br>
-            🌌 Bortle: ${p.bortle}<br>
-            🏔️ Altitud: ${p.altitud}<br>
-            <button onclick="cargar360('${p.archivo}')" style="margin-top:10px; cursor:pointer;">VER 360°</button>
-        </div>
-    `);
-});
-
-// --- VISOR 360 ---
-var viewer = null;
-function cargar360(img) {
-    if (viewer) { viewer.destroy(); }
-    viewer = pannellum.viewer('panorama', {
-        "type": "equirectangular",
-        "panorama": img, 
-        "autoLoad": true,
-        "compass": true,
-        "title": "Astrofotografía 360",
-        "author": "Angello González"
+    var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OSM'
     });
-}
 
-window.onload = function() {
-    if(puntos.length > 0) cargar360(puntos[0].archivo);
-};
+    // Capa de Contaminación Lumínica (ESRI - Alta disponibilidad)
+    var mapaBortle = L.tileLayer('https://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Light_Pollution_2016/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'VIIRS/DNB / ESRI',
+        opacity: 0.7
+    });
 
-    // --- PUNTOS CON ALTITUD ---
+    // --- CONTROLES ---
+    var baseMaps = {
+        "Vista Satélite": googleSatelite,
+        "Vista Calles": openStreetMap,
+        "Capa Bortle (Oscuridad)": mapaBortle
+    };
+
+    L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
+
+    // Buscador
+    L.Control.geocoder({
+        defaultMarkGeocode: true,
+        placeholder: "Buscar lugar...",
+    }).addTo(map);
+
+    // --- TUS DATOS ACTUALIZADOS ---
     var puntos = [
         {
             lat: -32.729, 
             lng: -70.551, 
             nombre: "Curva Campos de Ahumada",
             bortle: "4",
-            altitud: "1.196 msnm", // Añadida altitud
+            altitud: "1.196 msnm",
             archivo: "360 curva campos ahumada 2.jpg" 
         },
         {
@@ -119,11 +83,12 @@ window.onload = function() {
             lng: -70.548, 
             nombre: "Torreon Astronomico",
             bortle: "3",
-            altitud: "1.312 msnm", // Añadida altitud
+            altitud: "1.312 msnm",
             archivo: "360 yerko 2 Panorama.jpg"
         }
     ];
 
+    // Crear pines en el mapa
     puntos.forEach(function(p) {
         var marker = L.marker([p.lat, p.lng]).addTo(map);
         marker.bindPopup(`
@@ -138,21 +103,26 @@ window.onload = function() {
         `);
     });
 
-    // --- VISOR 360 ---
+    // --- VISOR 360 (Pannellum) ---
     var viewer = null;
     function cargar360(img) {
         if (viewer) { viewer.destroy(); }
+        
+        // encodeURI maneja los espacios en los nombres de archivo
+        var urlLimpia = encodeURI(img);
+        
         viewer = pannellum.viewer('panorama', {
             "type": "equirectangular",
-            "panorama": img, 
+            "panorama": urlLimpia, 
             "autoLoad": true,
             "compass": true,
             "title": "Astrofotografía 360",
-            "author": "Angello González"
+            "author": "Angello González",
+            "hfov": 110
         });
     }
 
-    // Cargar la primera foto por defecto
+    // Cargar la primera imagen al iniciar
     window.onload = function() {
         if(puntos.length > 0) cargar360(puntos[0].archivo);
     };
