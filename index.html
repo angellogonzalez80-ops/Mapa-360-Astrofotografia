@@ -45,28 +45,112 @@
 <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
 
 <script>
-// 1. Configuración del Mapa
-// Ajustamos el zoom inicial a 10 para que se vea mejor la zona de Los Andes
+// 1. Inicializar el mapa
 var map = L.map('map').setView([-32.833, -70.598], 10);
 
-// CAPA 1: Mapa Base (Calles y relieve) - Muy confiable
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+// --- DEFINICIÓN DE CAPAS ---
 
-// CAPA 2: Satélite (Híbrido) - Se activa sobre la anterior
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri',
-    opacity: 0.8 // Un poco de transparencia para ver nombres de lugares
-}).addTo(map);
+// Capa de Satélite (Google Hybrid)
+var satelite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    attribution: 'Google Maps'
+});
 
-// CAPA 3: Contaminación Lumínica (Bortle)
-// Usamos una URL más robusta para evitar el "Map data not available"
-L.tileLayer('https://map1.lightpollutionmap.info/tiles/2022/{z}/{x}/{y}.png', {
-    maxZoom: 12,
+// Capa de Mapa de Calles (OpenStreetMap)
+var calles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+});
+
+// Capa de Contaminación Lumínica (Bortle)
+var contaminacion = L.tileLayer('https://map1.lightpollutionmap.info/tiles/2022/{z}/{x}/{y}.png', {
+    maxZoom: 19,
     opacity: 0.5,
     attribution: 'Light Pollution Map'
-}).addTo(map);
+});
+
+// Activar capas por defecto
+satelite.addTo(map);
+contaminacion.addTo(map);
+
+// --- CONTROL DE CAPAS (El botón para cambiar) ---
+var capasBase = {
+    "Satélite": satelite,
+    "Mapa de Calles": calles
+};
+
+var capasSuperpuestas = {
+    "Contaminación Lumínica": contaminacion
+};
+
+L.control.layers(capasBase, capasSuperpuestas).addTo(map);
+
+// --- BUSCADOR DE GOOGLE MAPS (Geocodificador) ---
+L.Control.geocoder({
+    defaultMarkGeocode: false,
+    placeholder: "Buscar lugar o coordenadas...",
+    errorMessage: "No se encontró el lugar."
+})
+.on('markgeocode', function(e) {
+    var bbox = e.geocode.bbox;
+    var poly = L.polygon([
+        bbox.getSouthEast(),
+        bbox.getNorthEast(),
+        bbox.getNorthWest(),
+        bbox.getSouthWest()
+    ]);
+    map.fitBounds(poly.getBounds());
+})
+.addTo(map);
+
+// --- TUS PUNTOS DE ASTROFOTOGRAFÍA ---
+var puntos = [
+    {
+        lat: -32.833, 
+        lng: -70.598, 
+        nombre: "Curva Campos Ahumada",
+        bortle: "3",
+        altitud: "1200m",
+        archivo: "360-curva-campos-ahumada-2.jpg" 
+    },
+    {
+        lat: -32.850, 
+        lng: -70.610, 
+        nombre: "Yerko Panorama",
+        bortle: "3",
+        altitud: "1150m",
+        archivo: "360-yerko-2-panorama.jpg"
+    }
+];
+
+puntos.forEach(function(p) {
+    var marker = L.marker([p.lat, p.lng]).addTo(map);
+    var content = `
+        <div style="text-align:center; color:black;">
+            <strong>${p.nombre}</strong><br>
+            Bortle: ${p.bortle} | Alt: ${p.altitud}<br>
+            <button onclick="cargar360('${p.archivo}')" style="margin-top:10px; cursor:pointer; padding:5px 10px;">ABRIR 360°</button>
+        </div>
+    `;
+    marker.bindPopup(content);
+});
+
+// --- VISOR 360 ---
+var viewer = null;
+function cargar360(nombreArchivo) {
+    if (viewer) { viewer.destroy(); }
+    viewer = pannellum.viewer('panorama', {
+        "type": "equirectangular",
+        "panorama": nombreArchivo, 
+        "autoLoad": true,
+        "compass": true,
+        "title": "Astrofotografía 360",
+        "author": "Angello González"
+    });
+}
+
+// Carga inicial
+window.onload = function() {
+    cargar360(puntos[0].archivo);
+};
 
     // 2. Base de datos de tus fotos (Asegúrate de que el nombre coincida con el archivo en GitHub)
     var puntos = [
