@@ -35,39 +35,93 @@
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 <script>
-    // Inicialización del mapa en Los Andes
-    var map = L.map('map').setView([-32.833, -70.598], 10);
+   // 1. Inicializar el mapa
+var map = L.map('map').setView([-32.833, -70.598], 10);
 
-    // --- CAPAS ---
-    var googleSatelite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        attribution: 'Google Maps'
-    }).addTo(map);
+// --- DEFINICIÓN DE MAPAS BASE (Seleccionables uno a la vez) ---
 
-    var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OSM'
+var googleSatelite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    attribution: 'Google Maps'
+});
+
+var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OSM'
+});
+
+// Ahora la contaminación lumínica es un mapa base independiente
+var mapaContaminacion = L.tileLayer('https://map1.lightpollutionmap.info/tiles/2022/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: 'Light Pollution Map'
+});
+
+// Activar el satélite por defecto al entrar
+googleSatelite.addTo(map);
+
+// --- CONTROL DE CAPAS ---
+var baseMaps = {
+    "Vista Satélite": googleSatelite,
+    "Vista Calles": openStreetMap,
+    "Capa Bortle (Oscuridad)": mapaContaminacion
+};
+
+// Pasamos null en el segundo parámetro porque ya no hay capas "superpuestas"
+L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
+
+// --- BUSCADOR ---
+L.Control.geocoder({
+    defaultMarkGeocode: true,
+    placeholder: "Buscar lugar...",
+}).addTo(map);
+
+// --- PUNTOS DE INTERÉS ---
+var puntos = [
+    {
+        lat: -32.8333, 
+        lng: -70.6000, 
+        nombre: "Curva Campos Ahumada",
+        bortle: "3",
+        altitud: "1.200 msnm",
+        archivo: "360-curva-campos-ahumada-2.jpg" 
+    },
+    {
+        lat: -32.8500, 
+        lng: -70.6100, 
+        nombre: "Yerko Panorama",
+        bortle: "3",
+        altitud: "1.150 msnm",
+        archivo: "360-yerko-2-panorama.jpg"
+    }
+];
+
+puntos.forEach(function(p) {
+    var marker = L.marker([p.lat, p.lng]).addTo(map);
+    marker.bindPopup(`
+        <div style="font-family: sans-serif; color: #000;">
+            <strong>${p.nombre}</strong><br>
+            🌌 Bortle: ${p.bortle}<br>
+            🏔️ Altitud: ${p.altitud}<br>
+            <button onclick="cargar360('${p.archivo}')" style="margin-top:10px; cursor:pointer;">VER 360°</button>
+        </div>
+    `);
+});
+
+// --- VISOR 360 ---
+var viewer = null;
+function cargar360(img) {
+    if (viewer) { viewer.destroy(); }
+    viewer = pannellum.viewer('panorama', {
+        "type": "equirectangular",
+        "panorama": img, 
+        "autoLoad": true,
+        "compass": true,
+        "title": "Astrofotografía 360",
+        "author": "Angello González"
     });
+}
 
-    var lightPollution = L.tileLayer('https://map1.lightpollutionmap.info/tiles/2022/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        opacity: 0.5,
-        attribution: 'Light Pollution Map'
-    }).addTo(map);
-
-    // --- CONTROLES ---
-    var baseMaps = {
-        "Satélite": googleSatelite,
-        "Calles": openStreetMap
-    };
-    var overlayMaps = {
-        "Contaminación Lumínica": lightPollution
-    };
-    L.control.layers(baseMaps, overlayMaps).addTo(map);
-
-    // Buscador (Lupa)
-    L.Control.geocoder({
-        defaultMarkGeocode: true,
-        placeholder: "Buscar lugar...",
-    }).addTo(map);
+window.onload = function() {
+    if(puntos.length > 0) cargar360(puntos[0].archivo);
+};
 
     // --- PUNTOS CON ALTITUD ---
     var puntos = [
