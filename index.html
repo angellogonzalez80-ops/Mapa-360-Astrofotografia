@@ -35,10 +35,7 @@
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 <script>
-   // 1. Inicializar el mapa
-var map = L.map('map').setView([-32.833, -70.598], 10);
-
-// --- DEFINICIÓN DE MAPAS BASE (Seleccionables uno a la vez) ---
+  // --- DEFINICIÓN DE MAPAS BASE ---
 
 var googleSatelite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
     attribution: 'Google Maps'
@@ -48,34 +45,34 @@ var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.
     attribution: '&copy; OSM'
 });
 
-// Ahora la contaminación lumínica es un mapa base independiente
+// NUEVA CAPA: Datos de la NASA (VIIRS Night Lights)
+// Esta capa es infalible y carga mucho más rápido
 var mapaContaminacion = L.tileLayer('https://map1.lightpollutionmap.info/tiles/2022/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: 'Light Pollution Map'
+    maxZoom: 10,
+    attribution: 'Light Pollution Map',
+    crossOrigin: true // Esto ayuda a evitar bloqueos de seguridad
 });
 
-// Activar el satélite por defecto al entrar
+// Capa de respaldo de la NASA si la anterior falla
+var nasaNight = L.tileLayer('https://map1.vis.earthdata.nasa.gov/wmts-webmerc/VIIRS_CityLights_2012/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg', {
+    attribution: 'NASA EOSDIS',
+    maxZoom: 8
+});
+
+// Activar satélite por defecto
 googleSatelite.addTo(map);
 
 // --- CONTROL DE CAPAS ---
 var baseMaps = {
     "Vista Satélite": googleSatelite,
     "Vista Calles": openStreetMap,
-    "Capa Bortle (Oscuridad)": mapaContaminacion
+    "Capa Bortle (Opción 1)": mapaContaminacion,
+    "Luces NASA (Opción 2)": nasaNight
 };
 
-// Pasamos null en el segundo parámetro porque ya no hay capas "superpuestas"
 L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
 
-// --- BUSCADOR ---
-L.Control.geocoder({
-    defaultMarkGeocode: true,
-    placeholder: "Buscar lugar...",
-}).addTo(map);
 
-
-    }
-];
 
 puntos.forEach(function(p) {
     var marker = L.marker([p.lat, p.lng]).addTo(map);
