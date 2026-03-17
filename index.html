@@ -1,56 +1,35 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Mapa Astrofotografía 360</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+// --- TUS PUNTOS DE ASTROFOTOGRAFÍA ---
+// Al estar en el mismo repo, solo ponemos el nombre del archivo
+var puntos = [
+    {
+        lat: -32.833, // Coordenadas aproximadas de Los Andes / Campos Ahumada
+        lng: -70.598, 
+        nombre: "Curva Campos Ahumada",
+        bortle: "3",
+        altitud: "1200m",
+        foto360: "curva-ahumada.jpg" // NOMBRE EXACTO DEL ARCHIVO QUE SUBISTE
+    },
+    {
+        lat: -32.850, 
+        lng: -70.610, 
+        nombre: "Yerko Panorama",
+        bortle: "3",
+        altitud: "1150m",
+        foto360: "yerko.jpg" // NOMBRE EXACTO DEL ARCHIVO QUE SUBISTE
+    }
+];
+
+// --- FUNCIÓN DEL VISOR 360 MODIFICADA ---
+var viewer; 
+function cargar360(archivo) {
+    if (viewer) { viewer.destroy(); }
     
-    <style>
-        #map { height: 600px; width: 100%; }
-        #panorama { width: 100%; height: 400px; display: none; }
-    </style>
-</head>
-<body>
-
-    <h2>Mis Puntos de Observación</h2>
-    <div id="map"></div>
-    <div id="panorama"></div> <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
-
-    <script>
-        // 1. Inicializar el mapa
-        var map = L.map('map').setView([-33.4489, -70.6693], 6); // Coordenadas ejemplo (Chile)
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-
-        // 2. Definir tus puntos de astrofotografía
-        var puntos = [
-            {
-                lat: -32.729, 
-                lng: -70.551, 
-                nombre: "Torreon",
-                foto360: "https://tour.panoee.net/69b97847e1475b55ee82c630" // Reemplazar por tu link de Panoee
-            }
-        ];
-
-        // 3. Agregar marcadores al mapa
-        puntos.forEach(function(p) {
-            var marker = L.marker([p.lat, p.lng]).addTo(map);
-            marker.bindPopup("<b>" + p.nombre + "</b><br><button onclick='cargar360(\""+ p.foto360 +"\")'>Ver en 360°</button>");
-        });
-
-        // 4. Función para cargar la imagen 360
-        function cargar360(url) {
-            document.getElementById('panorama').style.display = 'block';
-            pannellum.viewer('panorama', {
-                "type": "equirectangular",
-                "panorama": url,
-                "autoLoad": true
-            });
-            window.scrollTo(0, document.body.scrollHeight);
-        }
-    </script>
-</body>
-</html>
+    // GitHub Pages sirve los archivos en la misma carpeta raíz
+    viewer = pannellum.viewer('panorama', {
+        "type": "equirectangular",
+        "panorama": archivo, 
+        "autoLoad": true,
+        "compass": true,
+        "northOffset": 0 // Puedes ajustar esto para orientar el norte real
+    });
+}
