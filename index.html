@@ -34,7 +34,7 @@
 
 <div id="layout">
     <div id="header">
-        <h1>Explorador de Cielos Oscuros 360°</h1>
+        <h1>Astrofotografía 360°</h1>
     </div>
     <div id="map"></div>
     <div id="panorama"></div>
@@ -57,13 +57,11 @@
         attribution: '&copy; OSM'
     });
 
-    // Capa de Contaminación Lumínica (ESRI - Alta disponibilidad)
     var mapaBortle = L.tileLayer('https://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Light_Pollution_2016/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'VIIRS/DNB / ESRI',
         opacity: 0.7
     });
 
-    // --- CONTROLES ---
     var baseMaps = {
         "Vista Satélite": googleSatelite,
         "Vista Calles": openStreetMap,
@@ -72,13 +70,12 @@
 
     L.control.layers(baseMaps, null, {collapsed: true}).addTo(map);
 
-    // Buscador
     L.Control.geocoder({
         defaultMarkGeocode: true,
         placeholder: "Buscar lugar...",
     }).addTo(map);
 
-    // --- TUS DATOS ACTUALIZADOS ---
+    // Fotografias
     var puntos = [
         {
             lat: -32.91606, 
@@ -129,12 +126,12 @@
         `);
     });
 
-    // --- VISOR 360 (Pannellum) ---
+    // Pannellum
     var viewer = null;
     function cargar360(img) {
         if (viewer) { viewer.destroy(); }
         
-        // encodeURI maneja los espacios en los nombres de archivo
+        // encodeURI 
         var urlLimpia = encodeURI(img);
         
         viewer = pannellum.viewer('panorama', {
